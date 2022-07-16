@@ -80,7 +80,7 @@ More examples:
 ```shell
  db.movies.find(
  {
-   "cast":"Or hasson",
+   "cast":"Or Hasson",
    "directors":"Rich Parker"
  }
  )
@@ -89,7 +89,7 @@ More examples:
 ```shell
  db.movies.find(
  {
-   "cast":"Or hasson",
+   "cast":"Or Hasson",
    "directors":"Rich Parker",
    "$or":[{"genres":"Drama","genres":"Crime"}]
    }
@@ -99,7 +99,7 @@ More examples:
 ```shell
  db.movies.find(
  {
-   "cast":"Or hasson",
+   "cast":"Or Hasson",
    "directors":"Rich Parker",
    "$or":[{"genres":"Drama","genres":"Crime"}]
    },
