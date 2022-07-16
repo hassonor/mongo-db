@@ -1,6 +1,6 @@
 #### MongoDB Query Structure
 ___
-MongoDB's queries are based on JSOn documents in which you write your criteria in the form of valid documents. 
+MongoDB's queries are based on JSON documents in which you write your criteria in the form of valid documents. 
 With the data stored in the form of JSON-like documents, the queries seem more natural and readable. 
 The following query is an example of simple MongoDB query that finds all the documents where the __name__
 field contains the value __Hasson__ on collections name __users__:
