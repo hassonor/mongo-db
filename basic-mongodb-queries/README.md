@@ -86,6 +86,22 @@ query will return count of movies that have exactly six comments:
 db.movies.count("num_mflix_comments": 6)
 ```
 #### countDocuments()
+This function returns the count of documents that are matched by the given condition.
+The following is an example query that returns the count of movies released in 2001: <br>
+`db.movies.countDocuments({"year":2001})` <br>
+Unlike the `count()` function, a query argument is a mandatory for `countDocuments()`. <br>
+To count all the documents in the collection, we can pass an empty query to the function 
+as follows: `db.movies.countDocuments({})`
+
+#### estimatedDocumentCount()
+This function returns the approximate or estimated count of documents in a collection.
+It does not accept any query and always returns the count of all documents in the collection.
+The count is always based on the _collection's **metadata**_.
+`db.movies.estimatedDocumentCount()` <br>
+As the count is based on metadata, the results are less accurate, but the performance is better.
+The function should be used when performance is more important that accuracy.
+
+
 
 
 
