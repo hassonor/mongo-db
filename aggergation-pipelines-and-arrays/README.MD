@@ -51,3 +51,73 @@ db.users.find({}, {_id: 0})
    "first_name": "Arya", "last_name": "Stark", "full_name": "ARYA Stark"
 }
 ```
+
+#### Updating Array Fields
+
+// Insert **movies** collection:
+```shell
+db.movies.inset({ _id: 123,"title": "The hasson" })
+```
+// Adding array field:
+```shell
+    db.movies.findOneAndUpdate(
+    {_id: 123},
+    {$set: {"genre":["Unknown"]}},
+    {"returnNewDocument": true}
+    )
+```
+// Uses $unset we can remove the **genre** field.
+```shell
+db.movies.findOneAndUpdate(
+  {_id: 123},
+  {$unset: {"genre": ""}},
+  {"returnNewDocument": true}
+)
+```
+
+#### Adding Elements to Arrays
+Adding an elements to Array:
+```shell
+db.movies.findOneAndUpdate(
+  {_id: 123},
+  {$push: {"genre": "unknown"}},
+  {"returnNewDocument": true}
+)
+  
+  db.movies.findOneAndUpdate(
+  {_id: 123},
+  {$push: {"genre": "Drama"}},
+  {"returnNewDocument": true}
+)
+```
+
+#### Adding Multiple Elements to Arrays
+```shell
+db.movies.findOneAndUpdate(
+  {_id: 123},
+  {
+    $push: {
+      "genre": {
+        $each: ["History","Action"]
+      }}
+  },
+  {"returnNewDocument": true}
+)
+```
+#### Sort Array
+Sort the array alphabetically (ASC =  sort => 1) or (DESC = sort => -1)
+```shell
+db.movies.findOneAndUpdate(
+  {_id: 123},
+  {
+    $push: {
+      "genre": {
+        $each: [],
+        $sort: 1
+      }}
+  },
+  {"returnNewDocument": true}
+)
+```
+
+#### An Array As a Set
