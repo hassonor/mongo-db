@@ -189,5 +189,112 @@ db.movies.aggregate(pipeline).forEach(printjson);
 {"_id": "OPEN", "avgRuntime": 114}
 {"_id": "PASSED", "avgRuntime": 91}
 ```
+#### Manipulating Data Example_1:
+* Match movies that were released before 1997.
+* Find the average popularity of each genre.
+* Sort genres by popularity.
+* Output the adjusted runtime of each movie.
+Translate to steps: <br>
+* Match movies that were released before 1997.
+* Group all movies by their first genre and accumulate the average and maximum IMDb ratings.
+* Sort by the average popularity of each genre.
+* Project the adjusted runtime as __total_runtime__.
+```shell
+ const findGenrePopularity = () =>{
+   print("Finding popularity of each genre");
+   const pipeline = [
+        {$match: {
+          released: {$lte: new ISODate("1997-01-01T00:00:00Z")}
+        }},
+        {$group: {
+          _id:{"$arrayElemAt":["$genres", 0]}
+          "popularity": { $avg: "$imdb.rating"},
+          "top_movie": {$max: "$imdb.rating"},
+          "longest_runtime":{$max: "$runtime"}
+        }},
+        {$sort: {popularity: -1 }},
+        {$project: {
+          _id: 1,
+          popularity: 1,
+          top_movie: 1,
+          adjusted_runtime: {$add: ["$longest_runtime", 15 ] } } }, //Adding 15 minutes of trailers
+   ];
+   db.movies.aggregate(pipeline).forEach(printjson);
+ }
+ findGenrePopularity();
+ 
+ //Output 
+ {
+   "id": "Action",
+   "popularity": 8.73,
+   "top_movie": 8.7,
+   "adjusted_runtime": 111
+ }
+ {
+   "id": "Short",
+   "popularity": 8.13,
+   "top_movie": 9.1,
+   "adjusted_runtime": 1112
+ }
+ {
+   "id": "Documentary",
+   "popularity": 7.43,
+   "top_movie": 8.6,
+   "adjusted_runtime": 1254
+ }
+```
 
+#### Manipulating Data Example_2 - Selecting the title from each movie Category:
+```shell
+ const findGenrePopularity = () => {
+   print("Finding popularity of each genre");
+   const pipeline = [
+        {$match: {
+          released: {$lte: new ISODate("1997-01-01T00:00:00Z")}, //Filter out movies after 1997-01-01.
+          runtime: {$lte: 220} //Filter out movies longer than 220 minutes.
+          "imdb.rating": {$gte: 7.5} //Filter out movies with lower than 7.5 rating.
+        }},
+        {$sort: {"imdb.rating": -1 }},
+        {$group: {
+          _id:{"$arrayElemAt":["$genres", 0]},
+          "recommended_title": {$first: "$title"},
+          "recommended_rating": {$first: "$imdb.rating"},
+          "recommended_raw_runtime": {$first: "$runtime"},
+          "popularity": { $avg: "$imdb.rating"},
+          "top_movie": {$max: "$imdb.rating"},
+          "longest_runtime":{$max: "$runtime"}
+        }},
+        {$sort: {popularity: -1 }},
+        {$project: {
+          _id: 1,
+          popularity: 1,
+          top_movie: 1,
+          recommended_title: 1,
+          recommended_rating: 1,
+          recommended_raw_runtime: 1,
+          adjusted_runtime: {$add: ["$longest_runtime", 15 ] } } }, //Adding 15 minutes of trailers
+   ];
+   db.movies.aggregate(pipeline).forEach(printjson);
+ }
+ findGenrePopularity();
+
+
+//Output
+ {
+   "id": "Action",
+   "recommended_title": "Or Hasson was Here",
+   "recommended_rating": 9.1,
+   "recommended_raw_runtime": 95,
+   "popularity": 8.13,
+   "top_movie": 9.1,
+   "adjusted_runtime": 1112
+ }
+ {
+   "id": "Documentary",
+   "popularity": 7.43,
+   "top_movie": 8.6,
+   "adjusted_runtime": 1254
+ }
+
+```
 
