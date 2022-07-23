@@ -76,13 +76,13 @@ Another example to Find Top Actions Movies with aggregation:
  const findTopActionMovies = () =>{
    print("Finding top Action movies...")
    const pipeline = [
-    { $sort: {"imdb.rating": -1}} // Sort by IMDB rating.
     { $match: {
       geres: {$in: ["Action"]}, //Action movies only
       released: {$lte: new ISODate("2000-01-01T00:00:00Z")} //Movies Before 2000-01-01
     }},
+    { $sort: {"imdb.rating": -1}} // Sort by IMDB rating.
         { $limit: 3 }, // Limit to 3 results.
-        { $project: genres: 1, released: 1, "imdb.rating": 1} //  (Last Stage)
+        { $project: title: 1, genres: 1, released: 1, "imdb.rating": 1} //  (Last Stage)
    ]
  }
 findTopActionMovies();
