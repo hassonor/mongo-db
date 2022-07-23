@@ -87,3 +87,107 @@ Another example to Find Top Actions Movies with aggregation:
  }
 findTopActionMovies();
 ```
+
+### Manipulating Data
+___
+#### The Group Stage
+The __$group__ stage allows up to group documents based on specific condition. <br>
+The __$group__ stage serves as the cornerstone of the most powerful queries.  <br>
+The most basic implementation of a __$group__ stage accepts only an **_id** key, with the value being an expression. <br>
+For example, the folliwng code will group all movies by their rating, outputting a single record for each rating category:
+```shell
+const pipeline = [
+  {$group: {
+    _id:"$rated"
+  }}
+  ];
+  db.movies.aggregate(pipeline).forEach(printjson);
+]
+
+Output:
+  {"_id": "NC-16"}
+  {"_id": "G"}
+  {"_id": "R"}
+  {"_id": "TV-Y7"}
+  {"_id": "PG-13"}
+```
+
+#### Accumulator Expressions
+The $group command can accept more than just one argument. It can also accept any number of additional arguments in the 
+following format:<br>
+`field: { accumulator: expression}` <br>
+* __field__ will define the key of our newly computed field for each group.
+* __accumulator__ must be a supported accumulator operator. There are a group
+of operators.
+* __expression__: in this context will be passed to the __accumulator__ operator as the input
+of what field in each document it should be accumulating.<br><br>
+_Example_: Identify the total number of movies in each group:
+```shell
+const pipeline = [
+  {$group:{
+    _id: "$rated",
+    "numMovies": { $sum: 1}
+  }}
+];
+db.movies.aggregate(pipeline).forEach(printjson);
+
+//Output
+{"_id": "NC-17","numMovies": 45}
+{"_id": "PG","numMovies": 11}
+{"_id": "OPEN","numMovies": 455}
+```
+
+_Example_ Find the total runtime of every single film in rating 
+,group the __rating__ field and accumulate the runtime of each film:
+```shell
+const pipeline = [
+  {$group: {
+    _id: "$rated",
+    "sumRuntime": { $sum: "$runtime"}
+  }}
+];
+db.movies.aggregate(pipeline).forEach(printjson);
+
+//Output
+{"_id": "Not Rated", "sumRuntime": 111}
+{"_id": "OPEN", "sumRuntime": 87}
+{"_id": "PASSED", "sumRuntime": 515}
+```
+_Example_: Get the avg runtime of the titles for each group.<br>
+Change the __$sum__ to __$avg__ and return the avg runtime across each group: <br>:
+```shell
+const pipeline = [
+  {$group: {
+    _id: "$rated",
+    "avgRuntime": { $avg: "$runtime"}
+  }}
+];
+db.movies.aggregate(pipeline).forEach(printjson);
+
+//Output
+{"_id": "Not Rated", "avgRuntime": 105.754}
+{"_id": "OPEN", "avgRuntime": 114.1}
+{"_id": "PASSED", "avgRuntime": 91.55555}
+```
+_Example_: Get the avg runtime of the titles for each group.<br>
+Change the __$sum__ to __$avg__ and return the avg runtime across each group <br>
+Adding __$trunc__ stage to get integer avg value:
+```shell
+const pipeline = [
+  {$group: {
+    _id: "$rated",
+    "sumRuntime": { $avg: "$runtime"}
+  }},
+  {$project: {
+      "roundedAvgRuntime": { $trunc: "$avgRuntime"}
+  }}
+];
+db.movies.aggregate(pipeline).forEach(printjson);
+
+//Output
+{"_id": "Not Rated", "avgRuntime": 105}
+{"_id": "OPEN", "avgRuntime": 114}
+{"_id": "PASSED", "avgRuntime": 91}
+```
+
+
