@@ -650,4 +650,173 @@ Output should looks like:
 
 ```
 
+#### Filter Early and filter often`
+
+A common way to first filter stage in our pipeline be a __$match__, which matches only documents we need later in the
+pipeline.
+Example:
+
+```shell
+const wellOrderedQuery = () =>{
+  print("Running query in a good order")
+  const pipeline = [
+    { $match: {
+      genres: {$in: ["Action"]}, // Action movies only.
+      released: {$lte: new ISODate("2002-01-01T00:00:00Z")}}}, // movies before 2002
+    { $sort: {"imdb.rating": -1}}, // Sort by imdb rating.
+    { $limit: 1}, // Limit to 1 result.
+    { $project: { title: 1, genres: 1, released: 1, "imdb.rating":1}},
+    ];
+  db.movies.aggregate(pipeline).forEach(printjson);
+}
+wellOrderedQuery();
+
+```
+
+Output will be:
+
+```shell
+{
+   "_id": ObjectId("5bf142459b72e12b2b1b2cd"),
+   "genres": ["Action","Drama"],
+   "title": "Men in black 2",
+   "released": ISODate("1998-01-01T00:00:00Z"),
+   "imdb":{
+     "rating": 9.2
+   }
+}
+```
+
+#### Finding Award-Winning Documentary Movies
+
+We need to find a few award-winning documentary movies and then list the movies that have won the most awards
+
+```shell
+const findAwardWinningDocumentaries = () =>{
+  print("Finding award winning documentary Movies....")
+  const pipeline = [
+      { $match: {"awards.wins": {$gte: 1}, genres: {$in: ["Documentary"]},
+      }},
+      { $project: {title: 1, genres:1, awards: 1}},
+      { $limit: 5},
+      { $sort: {"awards.wins":-1}} // Sort by award wins.
+  ];
+  const options = {
+    maxTimeMS: 3000,
+    allowDistUse: true,
+    comment: "Find Award Winning Documentary Films"
+  }
+  db.movies.aggregate(pipeline, options).forEach(printjson);
+}
+findAwardWinningDocumentaries();
+```
+
+Output will be:
+
+```shell
+{
+     "_id": ObjectId("5bf142459b72e12b2b1b2cd"),
+     "genres": ["Action","Documentary"],
+     "title": "Cizenfour",
+     "awards":{
+       "wins": 63,
+       "nomination": 30,
+       "text": "Nominated for 1 Oscar. Another 62 wins & 30 nominations."
+     }
+}
+....
+```
+
+#### EX: Putting Aggregation Into Practice
+
+___
+Our aim to design, test, and run an aggregation pipeline that will create unified view. <br>
+We should ensure that the final output of the aggregation answers the following business problems:
+
+* For each genre, which movie has the most award nominations, given that they have won at least one of these
+  nominations?
+* For each of these movies, what is their appended runtime, given that each movie has 12 minutes of trailers before it?
+* An example of the sorts of things users are saying about this film.
+* Because this is a classic movie marathon, only movies released before 1999 are eligible.
+* Across all genres, list all the genres that have the highest number of award wins.
+
+The following steps will help us to complete the task:
+
+1. Filter out any documents that were not released before 1999.
+2. Filter out any documents that do not have at least one award win.
+3. Sort the documents by awards nominations.
+4. Group the documents into a genre.
+5. Take the first film in each group.
+6. Take the total number of award wins for each group.
+7. Join with the __comments__ collection to get a list of comments for each film.
+8. Reduce the number of comments for each film to one using projection. (use the __$slice__ operator to reduce array
+   length).
+9. Append the trailer time of 12 minutes to each film's runtime.
+10. Sort our result by the total number of award wins.
+11. Impose a limit of 3 documents.
+
+```shell
+const findTopAwardWinningByGenre = () =>{
+  print("Finding award winning documentary Movies....")
+  const pipeline = [
+      { $match: 
+      {released: {$lte: new ISODate("1999-01-01T00:00:00Z")},"awards.wins": {$gte: 1},
+      }},
+      { $sort: {"awards.nomination":-1}} // Sort by award nomination.
+      { $group: {
+          _id: {"$arrayElemAt": ["$genres",0]},
+          "film_id": {$first: "$_id"},
+          "film_title": {$first: "$title"},
+          "film_awards": {$first: "$awards"},
+          "film_runtime": {$first: "$runtime"},
+          "genre_award_wins": {$sum: "$awards.wins"},
+        }},
+        {$lookup: {
+            from: "comments",
+            localField: "film_id",
+            foreignField: "movie_id",
+            as: "comments"
+          }},
+      {$project: 
+      {
+        film_id: 1, 
+        film_title:1, 
+        film_awards: 1,
+        film_runtime: {$add: ["$film_runtime",12]},
+        genre_award_wins: 1, 
+        "comments": {$slice: ["$comments",1 ]}
+      }},
+      {sort: {
+        "genre_award_wins": -1}},
+      { $limit: 3},
+  ];
+ 
+  db.movies.aggregate(pipeline).forEach(printjson);
+}
+findTopAwardWinningByGenre();
+```
+
+Output will be as follows:
+
+```shell
+{
+    "_id": "Drama",
+    "film_id":   ObjectId("5bf142459b72e12b2b1b2cd"),
+    "film_title": "Almost Famous",
+    "film_awards": {
+      "wins": 58,
+      "nominations": 95,
+      "text": "Won 1 Oscar. Another 57 wins & 95 nominations."
+    },
+    "genre_award_wins": 14021,
+    "film_runtime": 134,
+    "comments": ["some movie comment"]
+}
+{
+      "_id": "Comedy",
+      ...
+}
+```
+
+
 
